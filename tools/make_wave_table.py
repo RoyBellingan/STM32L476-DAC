@@ -22,7 +22,24 @@ import wave
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+# The rate the table is BUILT for: resampling and segment lengths use this, and
+# it is what the firmware's scenario tables count in.
 DAC_RATE = 1_000_000
+
+# The rate the DAC actually CLOCKS at, measured 2026-08-29 and confirmed by
+# construction. MSI PLL mode locks MSI to the nearest whole multiple of the
+# 32.768 kHz X2 crystal -- 122 x 32768 = 3_997_696 Hz, which is -576 ppm from
+# 4 MHz by design, not by error. SYSCLK = MSI*40/2 = 79_953_920, and TIM6 with
+# ARR=79 gives 999_424 Hz. Measured 999_430 Hz, within 6 ppm.
+#
+# Exactly 1.000000 MHz is unreachable from an LSE-locked MSI: it needs
+# 1_998_848 * PLLN to be a multiple of 1e6, and 1_998_848 = 2^15 * 61, so PLLN
+# would have to be a multiple of 5^6 = 15625. PLLN maxes out at 127.
+#
+# So: sample counts are exact, seconds are not. Anything converting samples to
+# time or bins to hertz must use TRUE_DAC_RATE, never DAC_RATE.
+TRUE_DAC_RATE = 999_424
+
 TONE_HZ = 107_400.0
 TONE_PEAK = 1800  # DAC counts at 0 dB, matches firmware SYNTH_TONE_PEAK
 REF_PEAK = 3233  # strongest call in the 16-bit source (PLAN §5)
@@ -387,6 +404,13 @@ def main() -> int:
 
     manifest = {
         "rate_hz": DAC_RATE,
+        "true_rate_hz": TRUE_DAC_RATE,
+        "true_rate_note": (
+            "rate_hz is what the table was built for; true_rate_hz is what the "
+            "DAC clocks at with MSI locked to the X2 crystal. Use true_rate_hz "
+            "for any samples-to-seconds or bin-to-hertz conversion."
+        ),
+        "true_tone_hz": round(TONE_HZ * TRUE_DAC_RATE / DAC_RATE, 2),
         "tone_hz": TONE_HZ,
         "tone_peak": TONE_PEAK,
         "species": "Rhinolophus hipposideros",

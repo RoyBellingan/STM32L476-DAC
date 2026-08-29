@@ -14,6 +14,7 @@ volatile uint32_t g_pos;
 volatile bool g_running;
 volatile bool g_done;
 volatile uint32_t g_need_fill;
+volatile uint32_t g_underrun;
 int32_t g_level_q12 = 4096;
 int32_t g_noise_q15;
 uint32_t g_rng = 0xA5A5A5A5u;
@@ -100,15 +101,26 @@ void silence_ring()
 	}
 }
 
+/* The request bits are a mask, not a count: a second edge on the same half
+   before poll() served the first one collapses into the one already set. That
+   is exactly how the -O0 build corrupted every run while looking like noise.
+   Catch it here, where the evidence still exists. Only the ISRs write the
+   counter, so no guard is needed. */
 void dma_ht(DMA_HandleTypeDef *hdma)
 {
 	(void)hdma;
+	if ((g_need_fill & 1u) != 0u) {
+		g_underrun = g_underrun + 1u;
+	}
 	g_need_fill |= 1u;
 }
 
 void dma_tc(DMA_HandleTypeDef *hdma)
 {
 	(void)hdma;
+	if ((g_need_fill & 2u) != 0u) {
+		g_underrun = g_underrun + 1u;
+	}
 	g_need_fill |= 2u;
 }
 
@@ -135,6 +147,7 @@ void init()
 	g_running = false;
 	g_done = false;
 	g_need_fill = 0;
+	g_underrun = 0;
 	g_level_q12 = 4096;
 	g_noise_q15 = 0;
 	g_floor_q15 = 0;
@@ -182,6 +195,8 @@ bool start()
 	g_pos = 0;
 	g_done = false;
 	g_need_fill = 0;
+	/* After stop(), before the DMA is armed: no ISR can be running. */
+	g_underrun = 0;
 	g_rng = 0xA5A5A5A5u;
 
 	uint32_t tone_start = 0;
@@ -327,6 +342,11 @@ uint32_t sample_pos()
 bool sync_line()
 {
 	return HAL_GPIO_ReadPin(SYNC_GPIO_Port, SYNC_Pin) == GPIO_PIN_SET;
+}
+
+uint32_t underruns()
+{
+	return g_underrun;
 }
 
 }

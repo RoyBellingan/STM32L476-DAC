@@ -58,6 +58,8 @@ UART_HandleTypeDef huart2;
 DMA_HandleTypeDef hdma_dac1;
 }
 
+static bool g_lse_locked;
+
 void SystemClock_Config();
 static void MX_GPIO_Init();
 static void MX_DMA_Init();
@@ -107,8 +109,26 @@ void SystemClock_Config()
     Error_Handler();
   }
 
-  /* MSI + PLL → 80 MHz. LSE is not probed at boot: HAL waits
-     LSE_STARTUP_TIMEOUT (5 s) if the 32 kHz crystal is missing. */
+  /* Start the 32.768 kHz crystal (X2) before the PLL, because MSIPLLEN can
+     only be set once LSE is ready -- the hardware refuses otherwise
+     (stm32l4xx_ll_rcc.h:2514). Polled directly rather than through
+     HAL_RCC_OscConfig, which would spend LSE_STARTUP_TIMEOUT (5 s) here on
+     every boot if the crystal turned out to be absent. One second is ample
+     for a crystal that is fitted, and a missing one costs one second once. */
+  __HAL_RCC_PWR_CLK_ENABLE();
+  HAL_PWR_EnableBkUpAccess();
+  SET_BIT(RCC->BDCR, RCC_BDCR_LSEON);
+  {
+    const uint32_t deadline = HAL_GetTick() + 1000u;
+    while ((RCC->BDCR & RCC_BDCR_LSERDY) == 0u) {
+      if (static_cast<int32_t>(HAL_GetTick() - deadline) >= 0) {
+        CLEAR_BIT(RCC->BDCR, RCC_BDCR_LSEON);
+        break;
+      }
+    }
+  }
+
+  /* MSI + PLL → 80 MHz. */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
@@ -133,6 +153,24 @@ void SystemClock_Config()
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK) {
     Error_Handler();
   }
+
+  /* Lock MSI to the crystal. MSI is the PLL source, so this puts LSE accuracy
+     on SYSCLK, on TIM6, and therefore on the 1 MSps DAC rate -- which is the
+     number every reconstruction result is measured against (PLAN section 9).
+
+     Measured on this board 2026-08-29, timing a 12.098 s scenario against the
+     host clock: free-running MSI was -6329 ppm (0.63 % fast). That is the same
+     order as the 0.65 % that DETECTOR_NOTES.md section 2 could not account
+     for. Do not enable this without re-measuring; the point is the number. */
+  if ((RCC->BDCR & RCC_BDCR_LSERDY) != 0u) {
+    HAL_RCCEx_EnableMSIPLLMode();
+    g_lse_locked = true;
+  }
+}
+
+bool clock_locked_to_lse(void)
+{
+  return g_lse_locked;
 }
 
 static void MX_DAC1_Init()

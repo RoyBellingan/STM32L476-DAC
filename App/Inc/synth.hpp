@@ -5,7 +5,20 @@
 
 namespace synth {
 
+/* Nominal, and used to lay scenarios out in samples. The hardware does NOT run
+   at this rate: MSI locked to the X2 crystal gives 999424 Hz exactly (see the
+   `clk` command). Sample counts below are therefore exact and the seconds are
+   not -- a "10 s" scenario emits 10'000'000 samples and takes 10.00576 s.
+
+   Do not "fix" this by setting kRateHz to 999424. Scenario boundaries would
+   stop landing on round sample counts, kPhaseInc would no longer put a whole
+   number of tone cycles in one ring, and the static-ring path in synth.cpp
+   would break. The host tools take the true rate from the manifest instead. */
 inline constexpr uint32_t kRateHz     = 1'000'000;
+
+/* What the DAC actually clocks at, for anything converting samples to seconds
+   or bins to hertz. Measured 2026-08-29: 999430 Hz, 6 ppm from this. */
+inline constexpr uint32_t kTrueRateHz = 999'424;
 inline constexpr uint32_t kRingWords  = 4096;
 inline constexpr uint32_t kHalfWords  = 2048;
 inline constexpr int32_t  kDacMid     = 2048;
@@ -34,6 +47,12 @@ void poll();
 bool running();
 uint32_t sample_pos();
 bool sync_line();
+
+/* Half-buffer fills that the main loop was too late to serve. The DMA replayed
+   stale ring content for those 2048 samples, and pos lost its parity with the
+   ring offset, so everything after the first one is wrong. Cleared by start().
+   A run that reports anything but 0 is not evidence of anything. */
+uint32_t underruns();
 
 }
 

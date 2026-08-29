@@ -17,13 +17,16 @@ extern "C" {
 #include "stm32l4xx_hal.h"
 
 /* USER CODE BEGIN Includes */
-
+#include <stdbool.h>
 /* USER CODE END Includes */
 
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-
+/* True when MSI is hardware-trimmed against the 32.768 kHz LSE crystal (X2),
+   so SYSCLK -- and therefore TIM6 and the DAC sample rate -- carries the
+   crystal's accuracy instead of the MSI RC's. Reported by the CLI `clk`. */
+bool clock_locked_to_lse(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
