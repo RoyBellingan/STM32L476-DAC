@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="415" viewBox="0 0 760 415" font-family="DejaVu Sans, Arial, sans-serif" role="img" aria-label="Why 62.5 Hz: the same drive, read again and again">
+<rect width="760" height="415" fill="#fcfcfb"/>
+<text x="72" y="24" font-size="15" font-weight="bold" fill="#0b0b0b">Why 62.5 Hz: the same drive, read again and again</text>
+<text x="72" y="42" font-size="11.5" fill="#52514e">DAC 0.2 V peak, reads of 0.2 s, 45 s each. At 50 Hz the mains hum beats with the source: 8.3 % p-p (σ</text>
+<text x="72" y="57" font-size="11.5" fill="#52514e">2.69 %). At 62.5 Hz it does not: 1.57 % p-p (σ 0.41 %), the noise of a 0.2 s read.</text>
+<rect x="72" y="71.5" width="18" height="3" rx="1.5" fill="#eb6834" fill-opacity="1"/>
+<text x="96" y="77" font-size="12" fill="#52514e">50 Hz</text>
+<rect x="154.0" y="71.5" width="18" height="3" rx="1.5" fill="#2a78d6" fill-opacity="1"/>
+<text x="178.0" y="77" font-size="12" fill="#52514e">62.5 Hz</text>
+<line x1="72" x2="736" y1="328.3" y2="328.3" stroke="#e6e5e0"/>
+<text x="64" y="332.3" text-anchor="end" font-size="11" fill="#52514e">-4.0</text>
+<line x1="72" x2="736" y1="272.7" y2="272.7" stroke="#e6e5e0"/>
+<text x="64" y="276.7" text-anchor="end" font-size="11" fill="#52514e">-2.0</text>
+<line x1="72" x2="736" y1="217.0" y2="217.0" stroke="#e6e5e0"/>
+<text x="64" y="221.0" text-anchor="end" font-size="11" fill="#52514e">0.0</text>
+<line x1="72" x2="736" y1="161.3" y2="161.3" stroke="#e6e5e0"/>
+<text x="64" y="165.3" text-anchor="end" font-size="11" fill="#52514e">2.0</text>
+<line x1="72" x2="736" y1="105.6" y2="105.6" stroke="#e6e5e0"/>
+<text x="64" y="109.6" text-anchor="end" font-size="11" fill="#52514e">4.0</text>
+<line x1="205.6" x2="205.6" y1="93" y2="361" stroke="#e6e5e0"/>
+<text x="205.6" y="379" text-anchor="middle" font-size="11" fill="#52514e">10</text>
+<line x1="353.5" x2="353.5" y1="93" y2="361" stroke="#e6e5e0"/>
+<text x="353.5" y="379" text-anchor="middle" font-size="11" fill="#52514e">20</text>
+<line x1="501.4" x2="501.4" y1="93" y2="361" stroke="#e6e5e0"/>
+<text x="501.4" y="379" text-anchor="middle" font-size="11" fill="#52514e">30</text>
+<line x1="649.3" x2="649.3" y1="93" y2="361" stroke="#e6e5e0"/>
+<text x="649.3" y="379" text-anchor="middle" font-size="11" fill="#52514e">40</text>
+<line x1="72" x2="736" y1="361" y2="361" stroke="#c9c8c2"/>
+<text x="404.0" y="403" text-anchor="middle" font-size="12" fill="#52514e">time (s)</text>
+<text x="18" y="227.0" text-anchor="middle" font-size="12" fill="#52514e" transform="rotate(-90 18 227.0)">fundamental at D12, % from its mean</text>
+<clipPath id="pa"><rect x="72" y="93" width="664" height="268"/></clipPath>
+<polyline clip-path="url(#pa)" points="74.7,283.6 91.6,236.7 108.4,191.1 125.3,146.1 142.1,119.6 159.0,124.7 175.8,133.0 192.7,158.7 209.6,207.2 226.4,252.2 243.3,294.0 260.2,323.6 277.0,342.5 293.9,333.1 310.7,307.4 327.6,263.1 344.4,216.7 361.3,167.7 378.2,135.1 395.0,121.0 411.9,124.3 428.7,154.1 445.6,192.2 462.5,245.5 479.3,286.6 496.2,321.7 513.1,330.5 529.9,330.2 546.8,316.3 563.6,263.3 580.5,222.5 597.4,183.5 614.2,143.0 631.1,122.6 647.9,111.5 664.8,137.1 681.7,150.1 698.5,186.8 715.4,230.7 732.2,269.5" fill="none" stroke="#eb6834" stroke-width="1.8" stroke-opacity="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline clip-path="url(#pa)" points="72.0,226.6 86.4,228.4 100.9,225.7 115.3,210.9 129.7,209.8 144.2,201.9 158.6,223.2 173.0,224.3 187.5,233.8 201.9,224.6 216.3,214.5 230.8,195.7 245.2,213.2 259.7,221.0 274.1,231.9 288.5,231.3 303.0,224.4 317.4,204.2 331.8,207.8 346.3,201.3 360.7,218.3 375.1,222.5 389.6,228.4 404.0,216.1 418.4,208.5 432.9,202.8 447.3,213.1 461.7,215.5 476.2,226.9 490.6,239.5 505.1,209.9 519.5,199.1 533.9,203.6 548.3,211.5 562.8,232.3 577.2,231.0 591.7,229.4 606.1,210.4 620.5,214.3 635.0,196.3 649.4,206.3 663.8,228.2 678.3,229.4 692.7,232.5 707.1,211.1 721.6,201.5 736.0,205.0" fill="none" stroke="#2a78d6" stroke-width="1.8" stroke-opacity="1" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>
