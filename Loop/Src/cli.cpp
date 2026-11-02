@@ -127,6 +127,8 @@ void cmd_help()
 	line("@H pga std [G]      standalone op-amp, external R2 A3-D11, R1 D11-C-GND; G nominal");
 	line("@H read [n]         measure n periods (default 10, max 500): @R, @C per channel,");
 	line("@H                  @G with the PGA on, then @E read (or one @? line)");
+	line("@H                  D8 (PA9) is high during the capture: scope trigger,");
+	line("@H                  2 periods after the amplitude stops changing");
 	line("@H dump [avg|raw]   one period of the last read: averaged, or the raw first one");
 	line("@H                  PGA centred output: input at VDDA/(2G) = 0.83/0.41/0.21/0.10 V");
 	line("@H stat             counters");
@@ -399,8 +401,7 @@ void cmd_read(const char *arg)
 	}
 	g_read_periods = n;
 	g_read = Read::WaitDac;
-	/* Settle (<= 3 periods) + capture + margin, at 20 ms a period. */
-	/* Settle (<= 3 periods) + capture + margin; one period is n / 50 ms. */
+	/* Settle (<= 5 periods) + capture + margin; one period is n / 50 ms. */
 	g_read_deadline = HAL_GetTick() + (n + 10u) * (sine_out::period() / 50u + 1u) + 200u;
 }
 
@@ -454,8 +455,7 @@ void report_read()
 {
 	const ana::Basis &tab = sine_out::basis();
 	const double f0 = loopcfg::f0_hz(sine_out::period());
-	const ana::Result rv = ana::analyze(adc_in::accum(adc_in::kVrefIdx), tab);
-	const double vdda = adc_in::vdda_from_mean(rv.mean);
+	const double vdda = adc_in::vdda_from_mean(ana::mean(adc_in::accum(adc_in::kVrefIdx)));
 	const bool bad = adc_in::capture_bad();
 
 	char b[200];
@@ -572,10 +572,11 @@ void read_poll()
 		if (!sine_out::settled(from) || adc_in::busy()) {
 			return;
 		}
-		uint32_t start = adc_in::current_period() + 1u;
+		uint32_t start = adc_in::current_period();
 		if (from > start) {
 			start = from;
 		}
+		start += loopcfg::kReadSettlePeriods;
 		g_read_amp = sine_out::amp_codes();
 		g_read_mid = sine_out::mid_codes();
 		g_read_pga = pga::gain();

@@ -8,8 +8,17 @@
     export PATH=~/st/stm32cubeide_2.0.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.linux64_1.0.100.202602081740/tools/bin:$PATH
     cmake --preset Release && cmake --build build/Release
 
-  Flash build/Release/LoopSource.elf, by serial (see Core/Src/main.cpp).
-  ST-LINK VCP, 115200 8N1.
+  Two ST-LINKs are usually plugged in. Pin the L476 by serial, or the
+  programmer grabs the U575 first.
+
+    NUCLEO-L476RG  SN 0669FF313937424757082637
+    NUCLEO-U575ZI  SN 004B00213235510C37333439   leave alone
+
+  PROG=~/st/stm32cubeide_2.0.0/plugins/com.st.stm32cube.ide.mcu.externaltools.cubeprogrammer.linux64_2.2.400.202601091506/tools/bin/STM32_Programmer_CLI
+  $PROG -l
+  $PROG -c port=SWD freq=4000 mode=UR sn=0669FF313937424757082637 -w build/Release/LoopSource.elf -v -rst
+
+  ST-LINK VCP, 460800 8N1 (loopcfg::kUartBaud).
 
   Pins (Nucleo-L476RG). PA0 and PB0 stay free for the BatTester wiring.
     PA4 = A2   DAC1 OUT1, the sine
@@ -18,6 +27,7 @@
     PA6 = D12  OPAMP2 VINP and ADC12_IN11  -> channel "i"
     PB0 = A3   OPAMP2 VOUT and ADC12_IN15  -> channel "p"; keep A3 free
     PA5 = LD2  on while the amplitude is not 0
+    PA9 = D8   scope trigger: high during each `read` capture
 */
 #include "main.h"
 
@@ -97,7 +107,7 @@ void tim6_init()
 void usart2_init()
 {
 	huart2.Instance = USART2;
-	huart2.Init.BaudRate = 115200;
+	huart2.Init.BaudRate = loopcfg::kUartBaud;
 	huart2.Init.WordLength = UART_WORDLENGTH_8B;
 	huart2.Init.StopBits = UART_STOPBITS_1;
 	huart2.Init.Parity = UART_PARITY_NONE;
@@ -110,7 +120,7 @@ void usart2_init()
 		Error_Handler();
 	}
 	/* Above the DMA interrupts. The L476 USART holds one received byte, which
-	   is 87 us at 115200; the DAC fill and the ADC block each run ~0.2 ms in
+	   is 87 us at 115200 and 22 us at 460800; the DAC fill and the ADC block each run ~0.2 ms in
 	   their DMA interrupts. At the shared MSP's priority 5, ~3 % of the bytes
 	   were lost (measured 2026-11-01). The UART handler is a few us, and the
 	   DMA interrupts have 10 ms of margin. */

@@ -11,6 +11,13 @@
    in the DMA interrupt: VDDA from VREFINT always, and the capture
    accumulators while a capture runs.
 
+   PA9 (D8) is a scope trigger: 0 to VDD. It goes high just before the first
+   scan of a capture and goes low after the last scan. `read` starts the
+   capture after loopcfg::kReadSettlePeriods periods, so that the amplitude
+   can stabilize. The edges are set in the
+   DMA interrupt, so they are not exact: they come after any DAC fill that is
+   running, because that interrupt has the same priority.
+
    Programmed at register level: the project's HAL is 1.13.6 and has no ADC
    driver; the one on disk (Cube FW L4 1.18.2) is a different version. */
 namespace adc_in {

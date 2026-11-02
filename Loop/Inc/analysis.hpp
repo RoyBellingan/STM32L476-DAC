@@ -65,7 +65,13 @@ struct Result {
 	uint32_t clip;
 };
 
-/* a.n must equal b.n. */
+/* Mean in codes, for a channel that needs nothing else (VREFINT). 0 until the
+   accumulator holds one whole period. */
+double mean(const Accum &a);
+
+/* a.n must equal b.n. Runs on the Cortex-M4 too, where the FPU has single
+   precision only and each double operation runs in software. So the sample
+   loops use int64 and float. Capture limit: 2000 periods (see analysis.cpp). */
 Result analyze(const Accum &a, const Basis &b);
 
 }

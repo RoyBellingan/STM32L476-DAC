@@ -108,6 +108,14 @@ int main()
 	near("tone: ac_rms", r.ac_rms, std::sqrt(500.0 * 500 / 2 + 100.0 * 100 / 2), 0.2);
 	near("tone: h_rms (rejects it)", r.h_rms, 500.0 / std::sqrt(2.0), 0.5);
 
+	/* 6. The largest capture `read` allows, full scale: the int64 sums must
+	      not overflow. mean() must agree with analyze(). */
+	feed(2047.5, 2047.0, 0.3, 0.0, 0.0, 500, 6);
+	r = ana::analyze(g_acc, g_basis);
+	near("500 periods a1 peak", r.h_pk[1], 2047.0, 0.1);
+	near("500 periods phase deg", r.ph1 * 180 / std::numbers::pi, 0.3 * 180 / std::numbers::pi, 0.01);
+	near("mean() against analyze()", ana::mean(g_acc), r.mean, 0.0);
+
 	std::printf("%s (%d failed)\n", g_fail ? "FAILED" : "PASSED", g_fail);
 	return g_fail ? 1 : 0;
 }

@@ -23,6 +23,10 @@ inline double f0_hz(uint32_t n) { return kFsHz / static_cast<double>(n); }
 /* Flux boards capture 231 samples at 2890 Hz = 79.9 ms (Flux ADCParam.h):
    whole cycles at 50 Hz (4) and at 62.5 Hz (5, n = 800), not at 60 Hz (4.8). */
 
+/* USART2, ST-LINK VCP. BRR = 174 gives 459 505 baud (-0.28 %). Change the PC
+   side too (terminal, tools/loop_snap.py). */
+inline constexpr uint32_t kUartBaud = 460'800u;
+
 /* DAC: buffer on, 0.2 V .. VREF+ - 0.2 V (DS10198 VDAC_OUT). The mid code is
    1.65 V at VDDA 3.3 V, so 1790 codes (1.44 V) is the largest peak that stays
    inside that range. */
@@ -32,6 +36,9 @@ inline constexpr float    kDacMaxPeak  = 1790.0f;
 /* ADC capture limits for `read`. */
 inline constexpr uint32_t kReadDefaultPeriods = 10u;
 inline constexpr uint32_t kReadMaxPeriods     = 500u;   /* 10 s; acc stays in int32 */
+/* Whole periods between the end of the DAC ramp (or the `read` command) and
+   the first captured period, so that the amplitude can stabilize. */
+inline constexpr uint32_t kReadSettlePeriods  = 2u;
 
 }
 

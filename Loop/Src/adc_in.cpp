@@ -60,6 +60,13 @@ volatile bool     g_bad;
 volatile uint32_t g_lost;
 volatile uint32_t g_ovr;
 volatile uint32_t g_dma_err;
+bool              g_trig_high;     /* the scope trigger rose for this capture */
+
+/* Scope trigger: PA9 = D8. High for the whole capture (see on_half()). */
+inline void trig_set(bool high)
+{
+	GPIOA->BSRR = high ? GPIO_PIN_9 : (static_cast<uint32_t>(GPIO_PIN_9) << 16u);
+}
 
 /* ADC_CR bits that hardware clears ("rs"): never write them back as 1. */
 constexpr uint32_t kCrRs = ADC_CR_ADCAL | ADC_CR_JADSTP | ADC_CR_ADSTP | ADC_CR_JADSTART
@@ -88,6 +95,14 @@ void gpio_init()
 	HAL_GPIO_Init(GPIOA, &g);
 	g.Pin = GPIO_PIN_0 | GPIO_PIN_1;
 	HAL_GPIO_Init(GPIOC, &g);
+
+	trig_set(false);
+	GPIO_InitTypeDef t = {};
+	t.Pin = GPIO_PIN_9;
+	t.Mode = GPIO_MODE_OUTPUT_PP;
+	t.Pull = GPIO_NOPULL;
+	t.Speed = GPIO_SPEED_FREQ_LOW;   /* slow edge: less coupling into the ADC pins */
+	HAL_GPIO_Init(GPIOA, &t);
 }
 
 void dma_init()
@@ -205,13 +220,27 @@ void on_half(uint32_t h)
 	const uint32_t phase0 = block % n;
 	const uint16_t *base = &g_ring[h * half_items];
 
+	/* Scope trigger. Do this before the work below, so that the edges do not
+	   move with its duration. The end of a period is the start of the next
+	   one, so the rise comes from the last half before the first captured
+	   scan. The capture starts only after a rise, so every capture has one. */
+	if (g_state == kArmed && !g_trig_high && phase0 == half_scans && period + 1u >= g_start) {
+		trig_set(true);
+		g_trig_high = true;
+	}
+	const bool last = g_state == kRunning && period == g_start + g_periods - 1u
+	                  && phase0 == n - half_scans;
+	if (last) {
+		trig_set(false);
+	}
+
 	uint32_t s = 0;
 	for (uint32_t i = 0; i < half_scans; i++) {
 		s += base[i * kNch + kVrefIdx];
 	}
 	g_vref_sum = s;
 
-	if (g_state == kArmed && phase0 == 0u && period >= g_start) {
+	if (g_state == kArmed && g_trig_high && phase0 == 0u && period >= g_start) {
 		g_start = period;
 		g_state = kRunning;
 	}
@@ -222,7 +251,7 @@ void on_half(uint32_t h)
 		if (period == g_start) {
 			std::memcpy(&g_raw[phase0 * kNch], base, half_items * sizeof(uint16_t));
 		}
-		if (period == g_start + g_periods - 1u && phase0 == n - half_scans) {
+		if (last) {
 			g_state = kDone;
 		}
 	}
@@ -267,6 +296,8 @@ void reconfigure(uint32_t n)
 	g_n = n;
 	g_scan = 0;
 	g_state = kIdle;
+	g_trig_high = false;
+	trig_set(false);
 	g_vref_sum = 0;
 	DMA1_Channel1->CNDTR = n * kNch;
 	DMA1_Channel1->CCR |= DMA_CCR_EN;
@@ -295,6 +326,7 @@ bool begin(uint32_t start_period, uint32_t periods)
 	g_bad = false;
 	g_start = start_period;
 	g_periods = periods;
+	g_trig_high = false;
 	__DMB();
 	g_state = kArmed;
 	return true;

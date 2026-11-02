@@ -47,7 +47,7 @@ GRID = '#e6e5e0'
 
 class Board:
     def __init__(self, port):
-        self.s = serial.Serial(port, 115200, timeout=0.3)
+        self.s = serial.Serial(port, 460800, timeout=0.3)
         time.sleep(0.5)
         self.s.write(b'\r\n')            # the first bytes after an open can be lost
         time.sleep(0.2)

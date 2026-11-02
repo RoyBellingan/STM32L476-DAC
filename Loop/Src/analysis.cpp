@@ -4,6 +4,25 @@
 #include <numbers>
 
 namespace ana {
+namespace {
+
+int64_t acc_sum(const Accum &a)
+{
+	int64_t sum = 0;
+	for (uint32_t i = 0; i < a.n; i++) {
+		sum += a.acc[i];
+	}
+	return sum;
+}
+
+/* The table value in Q30. The float value has at most 24 significant bits and
+   |x| <= 1, so the result is exact: no table precision is lost. */
+inline int32_t q30(float x)
+{
+	return static_cast<int32_t>(x * 1073741824.0f);
+}
+
+}
 
 void Basis::make(uint32_t n_samples)
 {
@@ -58,6 +77,14 @@ void Accum::add_block(const uint16_t *src, uint32_t stride, uint32_t m,
 	vmax   = static_cast<uint16_t>(hi);
 }
 
+double mean(const Accum &a)
+{
+	if (a.n == 0u || a.count < a.n) {
+		return 0.0;
+	}
+	return static_cast<double>(acc_sum(a)) / static_cast<double>(a.count);
+}
+
 Result analyze(const Accum &a, const Basis &b)
 {
 	Result r{};
@@ -71,11 +98,11 @@ Result analyze(const Accum &a, const Basis &b)
 	r.periods = a.count / n;
 	const double inv_p = 1.0 / static_cast<double>(r.periods);
 
-	int64_t sum = 0;
-	for (uint32_t i = 0; i < n; i++) {
-		sum += a.acc[i];
-	}
+	const int64_t sum = acc_sum(a);
 	r.mean = static_cast<double>(sum) / static_cast<double>(a.count);
+	/* The sample loops use acc[i] - m. m is the DC of the accumulator, to the
+	   nearest integer. The codes are >= 0, so sum >= 0. */
+	const int32_t m = static_cast<int32_t>((sum + n / 2u) / n);
 
 	/* E[v^2] - E[v]^2 in double: sumsq < 2^53 for any capture <= 500 periods. */
 	double ac_ms = static_cast<double>(a.sumsq) / static_cast<double>(a.count)
@@ -91,21 +118,25 @@ Result analyze(const Accum &a, const Basis &b)
 	double y1 = 0.0;
 	double harm_ms = 0.0;   /* sum of (A_k^2 / 2), k = 2..kHarm */
 	const uint32_t kmax = (kHarm < n / 2u) ? kHarm : (n / 2u - 1u);
+	/* Integer sums. The worst case is |acc - m| <= 4095 p, table <= 2^30,
+	   n <= 1000 terms: 4.4e15 p, which fits an int64 up to p = 2000.
+	   `read` stops at 500. */
+	const double dft_scale = 2.0 / static_cast<double>(n) * inv_p / 1073741824.0;
 	for (uint32_t k = 1; k <= kmax; k++) {
-		double xs = 0.0;
-		double yc = 0.0;
+		int64_t sx = 0;
+		int64_t sy = 0;
 		uint32_t idx = 0;
 		for (uint32_t i = 0; i < n; i++) {
-			const double v = static_cast<double>(a.acc[i]) * inv_p - r.mean;
-			xs += v * static_cast<double>(b.sin[idx]);
-			yc += v * static_cast<double>(b.cos[idx]);
+			const int32_t v = a.acc[i] - m;
+			sx += static_cast<int64_t>(v) * q30(b.sin[idx]);
+			sy += static_cast<int64_t>(v) * q30(b.cos[idx]);
 			idx += k;
 			if (idx >= n) {
 				idx -= n;
 			}
 		}
-		xs *= 2.0 / static_cast<double>(n);
-		yc *= 2.0 / static_cast<double>(n);
+		const double xs = static_cast<double>(sx) * dft_scale;
+		const double yc = static_cast<double>(sy) * dft_scale;
 		r.h_pk[k] = std::sqrt(xs * xs + yc * yc);
 		if (k == 1) {
 			x1 = xs;
@@ -136,16 +167,19 @@ Result analyze(const Accum &a, const Basis &b)
 	}
 
 	/* How far the averaged period departs from mean + fundamental. */
-	double worst = 0.0;
+	const float inv_pf = static_cast<float>(inv_p);
+	const float x1f = static_cast<float>(x1);
+	const float y1f = static_cast<float>(y1);
+	const float off = static_cast<float>(r.mean - static_cast<double>(m) * inv_p);
+	float worst = 0.0f;
 	for (uint32_t i = 0; i < n; i++) {
-		const double fit = r.mean + x1 * static_cast<double>(b.sin[i])
-		                 + y1 * static_cast<double>(b.cos[i]);
-		const double d = std::fabs(static_cast<double>(a.acc[i]) * inv_p - fit);
+		const float fit = off + x1f * b.sin[i] + y1f * b.cos[i];
+		const float d = std::fabs(static_cast<float>(a.acc[i] - m) * inv_pf - fit);
 		if (d > worst) {
 			worst = d;
 		}
 	}
-	r.res_max = worst;
+	r.res_max = static_cast<double>(worst);
 
 	if (r.ac_rms > 0.0) {
 		const double up = static_cast<double>(a.vmax) - r.mean;
