@@ -166,16 +166,17 @@ class Rig:
         return self.b.cmd(cmd, until)
 
     def read(self, n):
-        out = self.b.cmd(f'read {n}', ('@G',), timeout=n * 0.03 + 20)
-        r = {'R': next(l for l in out if l.startswith('@R')), 'G': out[-1]}
+        out = self.b.cmd(f'read {n}', ('@E read',), timeout=n * 0.03 + 20)
+        r = {'R': next(l for l in out if l.startswith('@R')),
+             'G': next((l for l in out if l.startswith('@G')), None)}
         for l in out:
             if l.startswith('@C'):
                 r[l.split()[1]] = l
-        r['gain'] = field(r['G'], 'gain')
+        r['gain'] = field(r['G'], 'gain') if r['G'] else None
         return r
 
     def snap_raw(self):
-        self.b.cmd('read 1', ('@G',))
+        self.b.cmd('read 1', ('@E read',))
         return parse_dump(self.b.cmd('dump raw', ('@W end',)))
 
     def dump_avg(self):

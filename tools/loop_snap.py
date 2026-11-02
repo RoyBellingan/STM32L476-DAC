@@ -217,17 +217,13 @@ def main():
 
     snaps = []
     for k in range(a.snaps):
-        b.cmd('read 1', ('@G', '@C i'))
+        b.cmd('read 1', ('@E read',))
         cols, x = parse_dump(b.cmd('dump raw', ('@W end',)))
         snaps.append(x)
         np.savetxt(os.path.join(out, f'snap_{k}.csv'), x, fmt='%d', delimiter=',',
                    header=','.join(cols), comments='')
         print(f'snapshot {k + 1}/{a.snaps}: {len(x)} samples')
-    rep = b.cmd(f'read {a.avg}', ('@G', '@C m'), timeout=a.avg * 0.03 + 30)
-    # the @G line follows the last @C only when the PGA is on
-    time.sleep(0.3)
-    while b.s.in_waiting:
-        rep.append(b.s.readline().decode(errors='replace').strip())
+    rep = b.cmd(f'read {a.avg}', ('@E read',), timeout=a.avg * 0.03 + 30)
     cols, avg = parse_dump(b.cmd('dump avg', ('@W end',)))
     np.savetxt(os.path.join(out, 'avg.csv'), avg, fmt='%.3f', delimiter=',',
                header=','.join(cols), comments='')

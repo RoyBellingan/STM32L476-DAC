@@ -125,7 +125,8 @@ void cmd_help()
 	line("@H pga [off|1|2|4|8|16] [ext]  OPAMP2 gain, PA6 (D12) in, PB0 (A3) out;");
 	line("@H                  ext: VINM on PA7 (D11), read as channel m");
 	line("@H pga std [G]      standalone op-amp, external R2 A3-D11, R1 D11-C-GND; G nominal");
-	line("@H read [n]         measure n periods (default 10, max 500)");
+	line("@H read [n]         measure n periods (default 10, max 500): @R, @C per channel,");
+	line("@H                  @G with the PGA on, then @E read (or one @? line)");
 	line("@H dump [avg|raw]   one period of the last read: averaged, or the raw first one");
 	line("@H                  PGA centred output: input at VDDA/(2G) = 0.83/0.41/0.21/0.10 V");
 	line("@H stat             counters");
@@ -552,6 +553,8 @@ void report_read()
 		                    rp.noise_rms * vpc * 1e6 / gm, rp_rail ? 1 : 0);
 		line(b);
 	}
+	/* The end of the reply: a host needs no count of the lines above (they depend on the PGA). */
+	line("@E read");
 }
 
 void read_poll()
