@@ -1,0 +1,10 @@
+run,note,time,folder,f0,amp_cmd,clipped,board_A,capture_s,d12_before_mV,d12_during_mV,d12_width_ms,amp_before_mV,amp_during_mV,amp_width_ms,rs_before_mV,rs_during_mV,rs_width_ms,N_x_gain
+6c,"clamp on, opto as a normal read, 2 s record with sample hp inside",17:23:14,a0.0200_2026-11-03_172308,62.50306,0.02,0,0.4787,12.4,1.886,2.573,78.0,65.843,67.471,1946.0,1.808,2.391,54.0,200.21
+6c,"clamp on, opto as a normal read, 2 s record with sample hp inside",17:23:26,a0.0500_2026-11-03_172320,62.50306,0.05,0,1.19,12.4,4.358,6.446,84.0,165.072,165.072,0.0,4.141,6.087,78.0,195.5
+6c,"clamp on, opto as a normal read, 2 s record with sample hp inside",17:23:41,a0.1000_2026-11-03_172335,62.50306,0.1,0,2.3619,14.6,7.91,12.91,84.0,327.956,327.956,0.0,7.581,12.603,84.0,187.41
+6c,"clamp on, opto as a normal read, 2 s record with sample hp inside",17:23:53,a0.1500_2026-11-03_172348,62.50306,0.15,0,3.5509,12.2,10.899,19.356,86.0,481.266,481.266,0.0,10.499,19.043,84.0,186.47
+6c,"clamp on, opto as a normal read, 2 s record with sample hp inside",17:24:06,a0.2000_2026-11-03_172400,62.50306,0.2,0,4.7045,12.5,15.111,25.76,86.0,630.66,630.66,0.0,14.736,25.459,86.0,184.79
+6c,"clamp on, opto as a normal read, 2 s record with sample hp inside",17:24:18,a0.3000_2026-11-03_172412,62.50306,0.3,0,7.0752,12.4,25.557,38.742,84.0,929.361,929.361,0.0,25.285,38.411,84.0,184.2
+6c,"clamp on, opto as a normal read, 2 s record with sample hp inside",17:24:31,a0.5000_2026-11-03_172426,62.50306,0.5,0,11.7733,12.9,48.964,64.482,84.0,1528.965,1528.965,0.0,48.194,63.695,84.0,184.84
+6c,"clamp on, opto as a normal read, 2 s record with sample hp inside",17:24:44,a0.7500_2026-11-03_172438,62.50306,0.75,0,17.6592,12.2,79.54,96.872,80.0,2281.548,2281.548,0.0,78.619,95.944,80.0,184.06
+6c,"clamp on, opto as a normal read, 2 s record with sample hp inside",17:24:57,a1.0000_2026-11-03_172451,62.50306,1.0,0,23.518,13.2,109.001,129.307,84.0,3039.567,3113.659,86.0,108.079,128.369,84.0,183.21
