@@ -375,6 +375,23 @@ class Dut:
             raise RuntimeError(f'DUT, sample hp: no current in: {out[-200:]}')
         return float(m.group(1))
 
+    def dump_adc(self, path, timeout=8.0):
+        """`print adc` after a sample, into a csv. Needs Debug::adcBuffer in the demo image."""
+        self.s.reset_input_buffer()
+        self.s.write(b'print adc\r\n')
+        t0 = time.time()
+        out = ''
+        while time.time() - t0 < timeout and 'END ADC Raw' not in out:
+            out += self.s.read(8192).decode(errors='replace')
+        rows = re.findall(r'^\s*(\d+)\s+(-?\d+) \(\s*-?\d+\)\s+(-?\d+) \(\s*-?\d+\)\s+(-?\d+) \(\s*-?\d+\)'
+                          r'\s+(-?\d+) \(\s*-?\d+\)\s+(-?\d+) \(\s*-?\d+\)', out, re.M)
+        if not rows:
+            raise RuntimeError(f'DUT, print adc: no rows (adcBuffer off?): {out[-200:]}')
+        with open(path, 'w', newline='') as f:
+            w = csv.writer(f)
+            w.writerow(['n', 'raw1', 'raw2', 'diff', 'e1', 'e2'])
+            w.writerows(rows)
+
 
 # --------------------------------------------------------------------------
 # one capture
@@ -444,6 +461,8 @@ def capture(args, daq, dut, amp, chans, trig, rawdir):
         dut.sample_send()
         board = dut.sample_read()
         row['board_A'] = board
+        if args.dump:
+            dut.dump_adc(os.path.join(folder, 'board_adc.csv'))
         if args.hold_hp:
             dut.hold_hp(True)        # the read ends with optoHP off
         if 'rs' in res and res['rs']['a1'] > 0:
@@ -617,6 +636,7 @@ def main():
     ap.add_argument('--hold-hp', action='store_true', help='optoHP on through the DUT shell, for the whole run')
     ap.add_argument('--sample', action='store_true', help='`sample hp` on the DUT after each capture')
     ap.add_argument('--during', action='store_true', help='one 2 s record with a board read inside it')
+    ap.add_argument('--dump', action='store_true', help='with --sample: the raw ADC buffer of each read, board_adc.csv in the raw folder')
     ap.add_argument('--ip', default='192.168.0.116')
     ap.add_argument('--ch', nargs='+', default=['1=d12', '2=amp', '3=trig', '4=rs'])
     ap.add_argument('--out', default=os.path.join(HERE, 'docs/loop/scope_' + time.strftime('%Y-%m-%d')))
