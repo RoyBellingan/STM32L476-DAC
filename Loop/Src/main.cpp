@@ -6,7 +6,23 @@
   BUILD RELEASE (the BatTester note in Core/Src/main.cpp applies):
 
     export PATH=~/st/stm32cubeide_2.0.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.linux64_1.0.100.202602081740/tools/bin:$PATH
-    cmake --preset Release && cmake --build build/Release
+    cmake --preset Release && cmake --build build/Release --target LoopSource -j8
+
+  Without --target, the build makes BatTester too. -j8 is the limit on 6pack.
+  Output: build/Release/LoopSource.elf and build/Release/LoopSource.map.
+
+  Build of 2026-11-07 (b2426b4), no warnings in Loop/:
+    FLASH  62 904 B of 1 MB   (6 %)
+    RAM    72 224 B of 96 KB  (73 %), the budget that runs out first:
+           adc_in g_acc 20 KB, g_raw 10 KB, g_ring 10 KB;
+           sine_out g_ring, g_wave, g_basis 8 KB each; preview scratch 4 KB.
+    RAM2   0 B of 32 KB. The linker script declares SRAM2 but puts no
+           section in it, so a buffer only goes there with a new section.
+
+  `id` prints rev=LOOP_GIT_REV, which CMake reads with git at configure
+  time, not at build time. After a commit, run `cmake --preset Release`
+  again, or the image reports the old rev. The rev does not show
+  uncommitted changes either.
 
   Two ST-LINKs are usually plugged in. Pin the L476 by serial, or the
   programmer grabs the U575 first.
